@@ -1,0 +1,64 @@
+#!/bin/bash
+#Inicio Versão #2
+
+#Desenvolvido Por : Paulo Jr - pauloresendejr@gmail.com 
+#Desenvolvido Por : Estevão Dias - estevaoantestor@gmail.com 
+#Desenvolvido Por : Tasso Falção - tassofalcao@gmail.com
+
+asenhas=("ubnt");
+ausers=("ubnt");
+
+if [ -z $1 ]
+then
+  clear
+  echo 'Impossivel Continuar :: Digite o Endereço de IP ::'
+  exit;
+fi
+
+for usuario in "${ausers[@]}" 
+do 
+	for senhas in "${asenhas[@]}"
+		do
+
+			conectou=`sshpass -p $senhas ssh $usuario@$1 -p 722 -o StrictHostKeyChecking=no "ifconfig ppp0 | grep addr | cut -d':' -f2 | cut -d' ' -f0"`
+			
+			if [ -n "$conectou" ]; then
+			    echo 'Processando Script em : ' $1 '- OK'
+				echo "Verificando se existe o arquivo /etc/persistent/rc.presysinit - OK"
+				tamanho=`sshpass -p $senhas ssh $usuario@$1 -p 722 -o StrictHostKeyChecking=no "du /etc/persistent/rc.presysinit | cut -d'/' -f0"`
+				if [ $tamanho -eq 0 ]; then
+					echo "Criando: /etc/persistent/rc.presysinit - OK"
+						sshpass -p $senhas ssh $usuario@$1 -p 722 -o StrictHostKeyChecking=no "> /etc/persistent/rc.presysinit"
+					echo "Arquivo Criado com Sucesso: /etc/persistent/rc.presysinit - OK"
+						sshpass -p $senhas ssh $usuario@$1 -p 722 -o StrictHostKeyChecking=no "echo sed -i \'\s/lcp-echo-failure 5/lcp-echo-failure 12/g\'\ /etc/ppp/options >> /etc/persistent/rc.presysinit"
+						sshpass -p $senhas ssh $usuario@$1 -p 722 -o StrictHostKeyChecking=no "echo sed -i \'\s/lcp-echo-interval 5/lcp-echo-interval 10/g\'\ /etc/ppp/options >> /etc/persistent/rc.presysinit"
+						sshpass -p $senhas ssh $usuario@$1 -p 722 -o StrictHostKeyChecking=no "echo sed -i \'\/lcp-max-configure 10/d\'\ /etc/ppp/options >> /etc/persistent/rc.presysinit"
+						sshpass -p $senhas ssh $usuario@$1 -p 722 -o StrictHostKeyChecking=no "echo sed -i \'\/lcp-max-failure 10/d\'\ /etc/ppp/options >> /etc/persistent/rc.presysinit"
+						sshpass -p $senhas ssh $usuario@$1 -p 722 -o StrictHostKeyChecking=no "echo sed -i \'\/lcp-max-terminate 3/d\'\ /etc/ppp/options >> /etc/persistent/rc.presysinit"
+						sshpass -p $senhas ssh $usuario@$1 -p 722 -o StrictHostKeyChecking=no "echo sed -i \'\/lcp-restart 3/d\'\ /etc/ppp/options >> /etc/persistent/rc.presysinit"
+					echo "Lendo /etc/persistent/rc.presysinit"
+						sshpass -p $senhas ssh $usuario@$1 -p 722 -o StrictHostKeyChecking=no "cat /etc/persistent/rc.presysinit"
+				else
+					echo "Arquivo Existente - Continuando Procedimentos - OK"
+				fi
+
+				echo "Padronizando Configurações - OK"
+					sshpass -p $senhas ssh $usuario@$1 -p 722 -o StrictHostKeyChecking=no "sed -i 's,^users.1.password=.*,users.1.password=9W1Sa5/jbxNo2,'  /tmp/system.cfg"
+					sshpass -p $senhas ssh $usuario@$1 -p 722 -o StrictHostKeyChecking=no "sed -i 's,^users.1.name=.*,users.1.name=foxcliente,' /tmp/system.cfg"
+					sshpass -p $senhas ssh $usuario@$1 -p 722 -o StrictHostKeyChecking=no "sed -i 's,^snmp.location=.*,snmp.location=Infr@C@ct1,' /tmp/system.cfg"
+					sshpass -p $senhas ssh $usuario@$1 -p 722 -o StrictHostKeyChecking=no "sed -i 's,^snmp.contact=.*,snmp.contact=suporte@fox.com.br,' /tmp/system.cfg"
+					sshpass -p $senhas ssh $usuario@$1 -p 722 -o StrictHostKeyChecking=no "sed -i 's,^snmp.community=.*,snmp.community=Infr@C@ct1,' /tmp/system.cfg"
+					sshpass -p $senhas ssh $usuario@$1 -p 722 -o StrictHostKeyChecking=no "sed -i 's,^snmp.status=.*,snmp.status=enabled,' /tmp/system.cfg"
+				echo "Lendo /tmp/system.cfg - OK"
+					sshpass -p $senhas ssh $usuario@$1 -p 722 -o StrictHostKeyChecking=no "cat /tmp/system.cfg"
+				echo "Atualizando Permissões - OK"
+					sshpass -p $senhas ssh $usuario@$1 -p 722 -o StrictHostKeyChecking=no "chmod 777 /etc/persistent/rc.presysinit"
+					sshpass -p $senhas ssh $usuario@$1 -p 722 -o StrictHostKeyChecking=no "cfgmtd -w -p /etc"
+					sshpass -p $senhas ssh $usuario@$1 -p 722 -o StrictHostKeyChecking=no "reboot"
+					exit && clear
+			else 
+				echo "Falha na Conexão em :" $1
+			fi
+		done
+done
+
